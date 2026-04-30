@@ -47,16 +47,7 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
-    message: "🚀 Fleet API is running...",
-    endpoints: [
-      "/api/auth",
-      "/api/trips",
-      "/api/drivers",
-      "/api/vehicles",
-      "/api/maintenance",
-      "/api/dashboard",
-      "/api/reports",
-    ],
+    message: "🚀 Fleet API is running..."
   });
 });
 
