@@ -50,9 +50,12 @@ const Dashboard = () => {
       const activeTrips = trips.filter((trip) => {
         const status = trip.status?.toLowerCase().trim();
 
-        return ["in progress", "in_progress", "ongoing", "active"].includes(
-          status,
-        );
+        return [
+          "in progress",
+          "in_progress",
+          "ongoing",
+          "active",
+        ].includes(status);
       }).length;
 
       const completedTrips = trips.filter((trip) => {
@@ -64,16 +67,24 @@ const Dashboard = () => {
 
       const availableDrivers = drivers.filter((driver) => {
         const status = driver.status?.toLowerCase().trim();
-        return status !== "busy";
+
+        return [
+          "available",
+          "active",
+        ].includes(status);
       }).length;
 
       const maintenancePending = maintenance.filter((item) => {
         const status = item.status?.toLowerCase().trim();
 
-        return ["pending", "in progress", "in_progress"].includes(status);
+        return [
+          "pending",
+          "in progress",
+          "in_progress",
+        ].includes(status);
       }).length;
 
-      /* ✅ FIXED FUEL COST */
+      /* Fuel Cost */
       const fuelCost = vehicles.reduce((sum, v) => {
         const mileage = Number(v.mileage) || 1;
         const fuelPrice = Number(v.fuelPrice) || 0;
@@ -82,7 +93,9 @@ const Dashboard = () => {
       }, 0);
 
       const completionRate =
-        totalTrips > 0 ? Math.round((completedTrips / totalTrips) * 100) : 0;
+        totalTrips > 0
+          ? Math.round((completedTrips / totalTrips) * 100)
+          : 0;
 
       setStats({
         totalVehicles,
@@ -101,21 +114,35 @@ const Dashboard = () => {
     }
   };
 
-  /* ================= MONTHLY PROGRESS ================= */
+  /* ================= FIXED PROGRESS VALUES ================= */
 
   const tripProgress =
     stats.totalTrips > 0
-      ? Math.round((stats.completedTrips / stats.totalTrips) * 100)
+      ? Math.round(
+          (stats.completedTrips / stats.totalTrips) * 100
+        )
       : 0;
 
   const vehicleUtilization =
     stats.totalVehicles > 0
-      ? Math.round((stats.activeTrips / stats.totalVehicles) * 100)
+      ? Math.min(
+          Math.round(
+            (stats.activeTrips / stats.totalVehicles) * 100
+          ),
+          100
+        )
       : 0;
 
   const maintenanceLoad =
     stats.totalVehicles > 0
-      ? Math.round((stats.maintenancePending / stats.totalVehicles) * 100)
+      ? Math.min(
+          Math.round(
+            (stats.maintenancePending /
+              stats.totalVehicles) *
+              100
+          ),
+          100
+        )
       : 0;
 
   const cards = [
@@ -161,11 +188,14 @@ const Dashboard = () => {
     <div className="p-8 bg-gray-50 min-h-screen">
       {/* HEADER */}
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-5xl font-bold text-gray-800">Dashboard</h1>
+        <h1 className="text-5xl font-bold text-gray-800">
+          Dashboard
+        </h1>
 
         <div className="flex items-center gap-4">
           <p className="text-gray-500">
-            Last Updated: {new Date().toLocaleTimeString()}
+            Last Updated:{" "}
+            {new Date().toLocaleTimeString()}
           </p>
 
           <button
@@ -193,7 +223,9 @@ const Dashboard = () => {
                 className="bg-white rounded-2xl shadow-md p-6 flex justify-between items-center hover:shadow-xl transition"
               >
                 <div>
-                  <h2 className="text-gray-500 text-xl">{item.title}</h2>
+                  <h2 className="text-gray-500 text-xl">
+                    {item.title}
+                  </h2>
 
                   <h1 className="text-5xl font-bold mt-3 text-gray-800">
                     {item.value}
@@ -213,32 +245,56 @@ const Dashboard = () => {
           <div className="grid md:grid-cols-2 gap-8">
             {/* LEFT */}
             <div className="bg-white rounded-2xl shadow-md p-8">
-              <h2 className="text-3xl font-bold mb-8">Monthly Overview</h2>
+              <h2 className="text-3xl font-bold mb-8">
+                Monthly Overview
+              </h2>
 
-              <ProgressBar label="Trips Completed" value={tripProgress} />
+              <ProgressBar
+                label="Trips Completed"
+                value={tripProgress}
+              />
 
               <ProgressBar
                 label="Vehicle Utilization"
                 value={vehicleUtilization}
               />
 
-              <ProgressBar label="Maintenance Load" value={maintenanceLoad} />
+              <ProgressBar
+                label="Maintenance Load"
+                value={maintenanceLoad}
+              />
             </div>
 
             {/* RIGHT */}
             <div className="bg-white rounded-2xl shadow-md p-8">
-              <h2 className="text-3xl font-bold mb-8">Quick Summary</h2>
+              <h2 className="text-3xl font-bold mb-8">
+                Quick Summary
+              </h2>
 
               <div className="space-y-5 text-xl text-gray-700">
-                <p>🚚 Vehicles Registered: {stats.totalVehicles}</p>
+                <p>
+                  🚚 Vehicles Registered:{" "}
+                  {stats.totalVehicles}
+                </p>
 
-                <p>📍 Trips Running: {stats.activeTrips}</p>
+                <p>
+                  📍 Trips Running: {stats.activeTrips}
+                </p>
 
-                <p>👨‍✈️ Drivers Available: {stats.availableDrivers}</p>
+                <p>
+                  👨‍✈️ Drivers Available:{" "}
+                  {stats.availableDrivers}
+                </p>
 
-                <p>🔧 Pending Maintenance: {stats.maintenancePending}</p>
+                <p>
+                  🔧 Pending Maintenance:{" "}
+                  {stats.maintenancePending}
+                </p>
 
-                <p>⛽ Fuel Spend: ${stats.fuelCost}</p>
+                <p>
+                  ⛽ Fuel Spend: ₹
+                  {stats.fuelCost}
+                </p>
               </div>
             </div>
           </div>
@@ -255,11 +311,11 @@ const ProgressBar = ({ label, value }) => (
       <span>{value}%</span>
     </div>
 
-    <div className="w-full bg-gray-200 rounded-full h-4">
+    <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
       <div
         className="bg-blue-500 h-4 rounded-full transition-all duration-500"
         style={{
-          width: `${value}%`,
+          width: `${Math.min(value, 100)}%`,
         }}
       ></div>
     </div>

@@ -9,6 +9,9 @@ import {
   Star,
 } from "lucide-react";
 
+const API =
+  "https://fleet-management-api-599u.onrender.com/api";
+
 const Drivers = () => {
   const [drivers, setDrivers] =
     useState([]);
@@ -46,7 +49,7 @@ const Drivers = () => {
   const fetchDrivers = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:5000/api/drivers",
+        `${API}/drivers`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -67,7 +70,7 @@ const Drivers = () => {
   const fetchVehicles = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:5000/api/vehicles",
+        `${API}/vehicles`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -152,7 +155,7 @@ const Drivers = () => {
 
       if (editingDriver) {
         await axios.put(
-          `http://localhost:5000/api/drivers/${editingDriver._id}`,
+          `${API}/drivers/${editingDriver._id}`,
           payload,
           {
             headers: {
@@ -166,7 +169,7 @@ const Drivers = () => {
         );
       } else {
         await axios.post(
-          "http://localhost:5000/api/drivers",
+          `${API}/drivers`,
           payload,
           {
             headers: {
@@ -200,7 +203,7 @@ const Drivers = () => {
     async (id) => {
       try {
         await axios.delete(
-          `http://localhost:5000/api/drivers/${id}`,
+          `${API}/drivers/${id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -431,7 +434,6 @@ const Drivers = () => {
               onChange={
                 handleChange
               }
-              required
             >
               <option value="">
                 Select Vehicle

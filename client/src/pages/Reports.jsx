@@ -42,7 +42,7 @@ const Reports = () => {
       const maintenance = maintenanceRes.data || [];
 
       /* =========================
-         FUEL COST (REAL FIXED)
+         FUEL COST
       ========================= */
       const fuelCost = vehicles.reduce((sum, item) => {
         const mileage = Number(item.mileage) || 1;
@@ -75,12 +75,16 @@ const Reports = () => {
       });
 
       /* =========================
-         FLEET UTILIZATION
+         FIXED FLEET UTILIZATION
+         NEVER MORE THAN 100%
       ========================= */
       const fleetUtilization =
         vehicles.length > 0
-          ? Math.round(
-              (activeTrips.length / vehicles.length) * 100
+          ? Math.min(
+              Math.round(
+                (activeTrips.length / vehicles.length) * 100
+              ),
+              100
             )
           : 0;
 
@@ -108,7 +112,7 @@ const Reports = () => {
           : "0";
 
       /* =========================
-         CHARTS
+         CHART DATA
       ========================= */
       const fuelChart = [
         fuelCost * 0.3,
@@ -155,12 +159,9 @@ const Reports = () => {
       type: "text/csv",
     });
 
-    const url =
-      window.URL.createObjectURL(blob);
+    const url = window.URL.createObjectURL(blob);
 
-    const a =
-      document.createElement("a");
-
+    const a = document.createElement("a");
     a.href = url;
     a.download = "fleet-report.csv";
     a.click();
@@ -169,9 +170,7 @@ const Reports = () => {
   const cards = [
     {
       title: "Fuel Cost",
-      value: `₹${report.fuelCost.toLocaleString(
-        "en-IN"
-      )}`,
+      value: `₹${report.fuelCost.toLocaleString("en-IN")}`,
       icon: <IndianRupee />,
       color: "bg-blue-500",
     },
@@ -213,15 +212,9 @@ const Reports = () => {
             }
             className="px-4 py-3 rounded-xl border bg-white"
           >
-            <option value="7d">
-              Last 7 Days
-            </option>
-            <option value="30d">
-              Last 30 Days
-            </option>
-            <option value="90d">
-              Last 90 Days
-            </option>
+            <option value="7d">Last 7 Days</option>
+            <option value="30d">Last 30 Days</option>
+            <option value="90d">Last 90 Days</option>
           </select>
 
           <button
@@ -276,9 +269,7 @@ const Reports = () => {
             <div className="grid md:grid-cols-2 gap-5 text-lg">
               <p>
                 ⛽ Fuel Spend: ₹
-                {report.fuelCost.toLocaleString(
-                  "en-IN"
-                )}
+                {report.fuelCost.toLocaleString("en-IN")}
               </p>
 
               <p>

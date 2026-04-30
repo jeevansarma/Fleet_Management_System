@@ -6,10 +6,15 @@ import {
   Edit,
   Trash2,
   Star,
+  X,
 } from "lucide-react";
 
+const API =
+  "https://fleet-management-api-599u.onrender.com/api";
+
 const Trips = () => {
-  const [trips, setTrips] = useState([]);
+  const [trips, setTrips] =
+    useState([]);
   const [drivers, setDrivers] =
     useState([]);
   const [vehicles, setVehicles] =
@@ -17,11 +22,13 @@ const Trips = () => {
 
   const [search, setSearch] =
     useState("");
+
   const [statusFilter, setStatusFilter] =
     useState("");
 
   const [showModal, setShowModal] =
     useState(false);
+
   const [editingTrip, setEditingTrip] =
     useState(null);
 
@@ -59,17 +66,21 @@ const Trips = () => {
     fetchVehicles();
   }, []);
 
+  /* ================= AXIOS CONFIG ================= */
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  };
+
   /* ================= FETCH ================= */
 
   const fetchTrips = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:5000/api/trips",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        `${API}/trips`,
+        config
       );
 
       setTrips(res.data);
@@ -83,12 +94,8 @@ const Trips = () => {
   const fetchDrivers = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:5000/api/drivers",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        `${API}/drivers`,
+        config
       );
 
       setDrivers(res.data);
@@ -98,12 +105,8 @@ const Trips = () => {
   const fetchVehicles = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:5000/api/vehicles",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        `${API}/vehicles`,
+        config
       );
 
       setVehicles(res.data);
@@ -182,13 +185,9 @@ const Trips = () => {
 
       if (editingTrip) {
         await axios.put(
-          `http://localhost:5000/api/trips/${editingTrip._id}`,
+          `${API}/trips/${editingTrip._id}`,
           payload,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          config
         );
 
         toast.success(
@@ -196,13 +195,9 @@ const Trips = () => {
         );
       } else {
         await axios.post(
-          "http://localhost:5000/api/trips",
+          `${API}/trips`,
           payload,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          config
         );
 
         toast.success(
@@ -271,12 +266,8 @@ const Trips = () => {
     async (id) => {
       try {
         await axios.delete(
-          `http://localhost:5000/api/trips/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          `${API}/trips/${id}`,
+          config
         );
 
         toast.success(
@@ -449,6 +440,7 @@ const Trips = () => {
                         trip.source
                       }
                     </div>
+
                     <div className="text-gray-500">
                       →
                       {
@@ -540,11 +532,24 @@ const Trips = () => {
             }
             className="bg-white w-full max-w-2xl rounded-2xl p-8 space-y-4"
           >
-            <h2 className="text-4xl font-bold">
-              {editingTrip
-                ? "Edit Trip"
-                : "Add Trip"}
-            </h2>
+            <div className="flex justify-between items-center">
+              <h2 className="text-4xl font-bold">
+                {editingTrip
+                  ? "Edit Trip"
+                  : "Add Trip"}
+              </h2>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setShowModal(
+                    false
+                  )
+                }
+              >
+                <X />
+              </button>
+            </div>
 
             <input
               name="source"

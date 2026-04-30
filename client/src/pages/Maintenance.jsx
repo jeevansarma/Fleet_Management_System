@@ -7,7 +7,7 @@ import {
   Edit,
   Trash2,
   Calendar,
-  DollarSign,
+  IndianRupee,
   CheckCircle,
   Clock,
   AlertTriangle,
@@ -340,7 +340,7 @@ const Maintenance = () => {
 
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-1">
-                          <DollarSign
+                          <IndianRupee
                             size={16}
                           />
                           {item.cost}

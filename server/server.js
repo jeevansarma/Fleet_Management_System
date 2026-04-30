@@ -1,49 +1,121 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-
-// Load env
 require("dotenv").config();
 
 const app = express();
-console.log(process.env.MONGODB_URI)
 
-// Routes
-const authRoutes = require("./routes/auth");
-const vehicleRoutes = require("./routes/vehicles");
-const driverRoutes = require("./routes/drivers");
-const tripRoutes = require("./routes/trips");
-const maintenanceRoutes = require("./routes/maintenance");
-const dashboardRoutes = require("./routes/dashboard");
-const reportRoutes = require("./routes/reports");
+/* ============================
+   ENV CHECK
+============================ */
+if (!process.env.MONGODB_URI) {
+  console.error("❌ MONGODB_URI missing");
+  process.exit(1);
+}
 
-// Middleware
-app.use(cors());
+/* ============================
+   MIDDLEWARE
+============================ */
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://fleetpro-zeta.vercel.app",
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // allow server-to-server / postman
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("CORS not allowed"));
+    },
+    credentials: true,
+  }),
+);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI)
-.then(() => console.log("MongoDB Connected"))
-.catch((err) => console.log("MongoDB Error:", err));
-
-// Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/vehicles", vehicleRoutes);
-app.use("/api/drivers", driverRoutes);
-app.use("/api/trips", tripRoutes);
-app.use("/api/maintenance", maintenanceRoutes);
-app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/reports", reportRoutes);
-
-// 404
-app.use("*", (req, res) => {
-  res.status(404).json({ message: "Route not found" });
+/* ============================
+   ROOT ROUTE (IMPORTANT)
+============================ */
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "🚀 Fleet API is running...",
+    endpoints: [
+      "/api/auth",
+      "/api/trips",
+      "/api/drivers",
+      "/api/vehicles",
+      "/api/maintenance",
+      "/api/dashboard",
+      "/api/reports",
+    ],
+  });
 });
 
-// Start server
+/* ============================
+   HEALTH CHECK (OPTIONAL)
+============================ */
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "OK" });
+});
+
+/* ============================
+   ROUTES
+============================ */
+app.use("/api/auth", require("./routes/auth"));
+app.use("/api/vehicles", require("./routes/vehicles"));
+app.use("/api/drivers", require("./routes/drivers"));
+app.use("/api/trips", require("./routes/trips"));
+app.use("/api/maintenance", require("./routes/maintenance"));
+app.use("/api/dashboard", require("./routes/dashboard"));
+app.use("/api/reports", require("./routes/reports"));
+
+/* ============================
+   404 HANDLER (LAST ONLY)
+============================ */
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+  });
+});
+
+/* ============================
+   GLOBAL ERROR HANDLER
+============================ */
+app.use((err, req, res, next) => {
+  console.error("🔥 ERROR:", err.message);
+
+  res.status(500).json({
+    success: false,
+    message: err.message || "Internal Server Error",
+  });
+});
+
+/* ============================
+   DATABASE CONNECTION
+============================ */
+mongoose
+  .connect(process.env.MONGODB_URI)
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch((err) => {
+    console.error("❌ MongoDB Error:", err.message);
+    process.exit(1);
+  });
+
+/* ============================
+   START SERVER
+============================ */
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
