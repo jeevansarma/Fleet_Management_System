@@ -27,8 +27,9 @@ const Maintenance = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingMaintenance, setEditingMaintenance] = useState(null);
 
+  // ✅ SINGLE SOURCE OF TRUTH
   const [formData, setFormData] = useState({
-    vehicleId: "", // ✅ FIXED
+    vehicleId: "",
     serviceType: "",
     serviceDate: "",
     cost: "",
@@ -47,11 +48,9 @@ const Maintenance = () => {
   const fetchMaintenance = async () => {
     try {
       setLoading(true);
-
       const res = await api.get("/maintenance");
       setMaintenance(res.data || []);
     } catch (error) {
-      console.log(error);
       toast.error("Failed to fetch maintenance");
     } finally {
       setLoading(false);
@@ -69,21 +68,23 @@ const Maintenance = () => {
 
   /* ================= SUBMIT ================= */
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // ✅ STOP PAGE RELOAD
 
     try {
-      if (editingMaintenance) {
-        await api.put(`/maintenance/${editingMaintenance._id}`, formData);
-        toast.success("Maintenance updated");
-      } else {
-        await api.post("/maintenance", formData);
-        toast.success("Maintenance scheduled");
-      }
+      await api.post("/maintenance", {
+        vehicleId: formData.vehicleId,
+        serviceType: formData.serviceType,
+        serviceDate: formData.serviceDate,
+        cost: Number(formData.cost),
+        status: formData.status,
+      });
 
+      toast.success("✅ Maintenance Added");
       fetchMaintenance();
       closeModal();
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Something went wrong");
+    } catch (err) {
+      console.error(err.response?.data || err.message);
+      toast.error(err.response?.data?.message || "Error");
     }
   };
 
@@ -105,7 +106,7 @@ const Maintenance = () => {
     setEditingMaintenance(item);
 
     setFormData({
-      vehicleId: item.vehicleId?._id || "", // ✅ FIX
+      vehicleId: item.vehicleId?._id || "",
       serviceType: item.serviceType || "",
       serviceDate: item.serviceDate?.slice(0, 10) || "",
       cost: item.cost || "",
@@ -121,7 +122,7 @@ const Maintenance = () => {
     setEditingMaintenance(null);
 
     setFormData({
-      vehicleNumber: "",
+      vehicleId: "",
       serviceType: "",
       serviceDate: "",
       cost: "",
@@ -130,7 +131,6 @@ const Maintenance = () => {
   };
 
   /* ================= HELPERS ================= */
-
   const getStatusColor = (status) => {
     switch (status) {
       case "completed":
@@ -159,7 +159,7 @@ const Maintenance = () => {
 
   /* ================= FILTER ================= */
   const filteredMaintenance = maintenance.filter((item) => {
-    const vehicleNo = item.vehicleNumber?.toLowerCase() || "";
+    const vehicleNo = item.vehicleId?.vehicleNumber?.toLowerCase() || "";
 
     const matchesSearch =
       vehicleNo.includes(searchTerm.toLowerCase()) ||
@@ -182,13 +182,13 @@ const Maintenance = () => {
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
-        <h1 className="text-4xl font-bold text-gray-800">Maintenance</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-4xl font-bold">Maintenance</h1>
 
         {isAdmin && (
           <button
             onClick={() => setShowModal(true)}
-            className="bg-blue-600 text-white px-5 py-3 rounded-xl flex items-center gap-2 hover:bg-blue-700 transition"
+            className="bg-blue-600 text-white px-5 py-3 rounded-xl flex items-center gap-2"
           >
             <Plus size={18} />
             Schedule Maintenance
@@ -196,259 +196,149 @@ const Maintenance = () => {
         )}
       </div>
 
-      {/* SEARCH + FILTER */}
-      <div className="grid md:grid-cols-4 gap-4 mb-8">
-        <div className="md:col-span-3 relative">
-          <Search className="absolute top-3.5 left-3 text-gray-400" size={18} />
-
-          <input
-            type="text"
-            placeholder="Search maintenance..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 rounded-xl border bg-white"
-          />
-        </div>
-
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-4 py-3 rounded-xl border bg-white"
-        >
-          <option value="all">All Status</option>
-          <option value="scheduled">Scheduled</option>
-          <option value="in_progress">In Progress</option>
-          <option value="completed">Completed</option>
-          <option value="overdue">Overdue</option>
-        </select>
-      </div>
+      {/* SEARCH */}
+      <input
+        type="text"
+        placeholder="Search..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="mb-4 p-3 border rounded-xl w-full"
+      />
 
       {/* TABLE */}
-      <div className="bg-white rounded-2xl shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-100 text-gray-600 text-sm uppercase">
-              <tr>
-                <th className="px-6 py-4 text-left">Vehicle</th>
-                <th className="px-6 py-4 text-left">Service</th>
-                <th className="px-6 py-4 text-left">Date</th>
-                <th className="px-6 py-4 text-left">Cost</th>
-                <th className="px-6 py-4 text-left">Status</th>
+      <div className="bg-white rounded-xl shadow">
+        <table className="w-full">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="p-3">Vehicle</th>
+              <th className="p-3">Service</th>
+              <th className="p-3">Date</th>
+              <th className="p-3">Cost</th>
+              <th className="p-3">Status</th>
+              {isAdmin && <th>Actions</th>}
+            </tr>
+          </thead>
 
-                {isAdmin && <th className="px-6 py-4 text-left">Actions</th>}
-              </tr>
-            </thead>
+          <tbody>
+            {filteredMaintenance.map((item) => (
+              <tr key={item._id} className="border-t">
+                <td>{item.vehicleId?.vehicleNumber}</td>
+                <td>{item.serviceType}</td>
+                <td>
+                  {new Date(item.serviceDate).toLocaleDateString()}
+                </td>
+                <td>₹ {item.cost}</td>
+                <td>{item.status.replace("_", " ")}</td>
 
-            <tbody>
-              {filteredMaintenance.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-10 text-gray-500">
-                    No records found
+                {isAdmin && (
+                  <td className="flex gap-2">
+                    <button onClick={() => handleEdit(item)}>
+                      <Edit size={16} />
+                    </button>
+                    <button onClick={() => handleDelete(item._id)}>
+                      <Trash2 size={16} />
+                    </button>
                   </td>
-                </tr>
-              ) : (
-                filteredMaintenance.map((item, index) => (
-                  <motion.tr
-                    key={item._id}
-                    initial={{
-                      opacity: 0,
-                      y: 20,
-                    }}
-                    animate={{
-                      opacity: 1,
-                      y: 0,
-                    }}
-                    transition={{
-                      delay: index * 0.05,
-                    }}
-                    className="border-t hover:bg-gray-50"
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <Wrench size={18} className="text-gray-400" />
-                        {item.vehicleId?.vehicleNumber} {/* ✅ FIX */}
-                      </div>
-                    </td>
-
-                    <td className="px-6 py-4">{item.serviceType}</td>
-
-                    <td className="px-6 py-4">
-                      {new Date(item.serviceDate).toLocaleDateString()}
-                    </td>
-
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1">
-                        <IndianRupee size={16} />
-                        {item.cost}
-                      </div>
-                    </td>
-
-                    <td className="px-6 py-4">
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm inline-flex items-center gap-2 ${getStatusColor(
-                          item.status,
-                        )}`}
-                      >
-                        {getStatusIcon(item.status)}
-
-                        {item.status.replace("_", " ")}
-                      </span>
-                    </td>
-
-                    {isAdmin && (
-                      <td className="px-6 py-4">
-                        <div className="flex gap-3">
-                          <button
-                            onClick={() => handleEdit(item)}
-                            className="text-blue-600"
-                          >
-                            <Edit size={18} />
-                          </button>
-
-                          <button
-                            onClick={() => handleDelete(item._id)}
-                            className="text-red-600"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
-                      </td>
-                    )}
-                  </motion.tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {/* MODAL */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-4">
-          <motion.div
-            initial={{
-              scale: 0.9,
-              opacity: 0,
-            }}
-            animate={{
-              scale: 1,
-              opacity: 1,
-            }}
-            className="bg-white rounded-2xl w-full max-w-lg p-6"
-          >
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">
-                {editingMaintenance
-                  ? "Edit Maintenance"
-                  : "Schedule Maintenance"}
-              </h2>
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-xl w-full max-w-md">
+            <h2 className="text-xl mb-4">Schedule Maintenance</h2>
 
-              <button onClick={closeModal}>
-                <X />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3">
+              {/* VEHICLE */}
               <select
-                required
                 value={formData.vehicleId}
                 onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    vehicleId: e.target.value,
-                  })
+                  setFormData({ ...formData, vehicleId: e.target.value })
                 }
-                className="w-full border p-3 rounded-xl"
+                className="w-full border p-3 rounded"
+                required
               >
                 <option value="">Select Vehicle</option>
-
                 {vehicles.map((v) => (
                   <option key={v._id} value={v._id}>
-                    {" "}
-                    {/* ✅ FIXED */}
                     {v.vehicleNumber}
                   </option>
                 ))}
               </select>
 
+              {/* SERVICE */}
               <select
-                required
                 value={formData.serviceType}
                 onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    serviceType: e.target.value,
-                  })
+                  setFormData({ ...formData, serviceType: e.target.value })
                 }
-                className="w-full border p-3 rounded-xl"
+                className="w-full border p-3 rounded"
+                required
               >
                 <option value="">Service Type</option>
                 <option>Oil Change</option>
                 <option>Tire Replacement</option>
                 <option>Brake Service</option>
-                <option>Engine Tune-up</option>
               </select>
 
+              {/* DATE */}
               <input
                 type="date"
-                required
                 value={formData.serviceDate}
                 onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    serviceDate: e.target.value,
-                  })
+                  setFormData({ ...formData, serviceDate: e.target.value })
                 }
-                className="w-full border p-3 rounded-xl"
+                className="w-full border p-3 rounded"
+                required
               />
 
+              {/* COST */}
               <input
                 type="number"
-                required
                 placeholder="Cost"
                 value={formData.cost}
                 onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    cost: e.target.value,
-                  })
+                  setFormData({ ...formData, cost: e.target.value })
                 }
-                className="w-full border p-3 rounded-xl"
+                className="w-full border p-3 rounded"
+                required
               />
 
+              {/* STATUS */}
               <select
                 value={formData.status}
                 onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    status: e.target.value,
-                  })
+                  setFormData({ ...formData, status: e.target.value })
                 }
-                className="w-full border p-3 rounded-xl"
+                className="w-full border p-3 rounded"
               >
                 <option value="scheduled">Scheduled</option>
-                <option value="in_progress">In Progress</option> {/* ✅ FIX */}
+                <option value="in_progress">In Progress</option>
                 <option value="completed">Completed</option>
               </select>
 
-              <div className="grid grid-cols-2 gap-4 pt-2">
+              <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="py-3 bg-gray-100 rounded-xl"
+                  className="w-1/2 bg-gray-200 p-2 rounded"
                 >
                   Cancel
                 </button>
 
                 <button
                   type="submit"
-                  className="py-3 bg-blue-600 text-white rounded-xl"
+                  className="w-1/2 bg-blue-600 text-white p-2 rounded"
                 >
-                  {editingMaintenance ? "Update" : "Schedule"}
+                  Save
                 </button>
               </div>
             </form>
-          </motion.div>
+          </div>
         </div>
       )}
     </div>
